@@ -27,6 +27,11 @@
 
 printing="on"
 
+#option_times should be "preference" or "conflict"
+#if it's "conflict" then we want to return the complement set of all possible times
+#if it's "preference" then we want to match the advisors with the times that they indicated
+option_times = "preference"
+
 import sys
 import argparse
 import csv
@@ -60,8 +65,8 @@ advisor_dep_pairing_col=1
 advisor_pairing_str_col=2
 advisor_dept_col=3
 advisor_majors_col=4
-advisor_times_col=10
-num_advisor_cols=11
+advisor_times_col=11
+num_advisor_cols=12
 
 #course_conflict_csv
 course_code_col = 0
@@ -336,9 +341,13 @@ def find_available_times(unavailable_times):
 	#have the full list of times
 	all_times=full_permutation_time()
 	#Check for each time if it's in the unavailable_times then remove it
-	for time in unavailable_times:
-		all_times.remove(time)
-	#Return the list of available times
+	#Check if it's a list or a string
+	if not isinstance(unavailable_times,str):
+		for time in unavailable_times:
+			all_times.remove(time)
+		#Return the list of available times
+	else:
+		all_times.remove(unavailable_times)
 	return all_times
 	
 	
@@ -428,11 +437,22 @@ def main(student_file_points,advisor_file,course_conflict_list,full_data_file,am
 					iterator=iterator+1
 				else: #Regular letter
 					temp_string=temp_string+reader[iterator]
-					iterator=iterator+1				
+					iterator=iterator+1		
+			#At this point, if there's only a string at the end, then we should append it
+			if temp_string!="" and temp_string!="\n":
+				temp_index.append(temp_string.split("\n")[0])
 			advisor_csv.append(temp_index)
 			#Read the next line
 			reader=f.readline()
 			
+	#Convert the times in the advisor_times_col to be the correct ones
+	for i in range(0,len(advisor_csv)):
+		if len(advisor_csv[i])>=num_advisor_cols:
+			if not isinstance(advisor_csv[i][advisor_times_col],str):
+				for j in range(0,len(advisor_csv[i][advisor_times_col])):
+					advisor_csv[i][advisor_times_col][j] = convert_time(advisor_csv[i][advisor_times_col][j])
+			else:
+				advisor_csv[i][advisor_times_col] = convert_time(advisor_csv[i][advisor_times_col])
 			
 	#Open and import the course information from file
 	#See the header before the functions for the column definitions
@@ -525,15 +545,19 @@ def main(student_file_points,advisor_file,course_conflict_list,full_data_file,am
 					error=1
 				
 		#Initialize a dictionary for the pairing times
+		#remember to make them the complement of the given times
 		pairing_time_dict=dict()
 		for i in range(0,len(advisor_csv)):
 			advisor = advisor_csv[i][advisor_id_col].lower()
 			#Add all the advisors and their times
 			#Check if they even put times; if they didn't then give them all the times
 			if len(advisor_csv[i])>=num_advisor_cols:
-				pairing_time_dict[advisor]=advisor_csv[i][advisor_times_col]
+				if option_times = "conflict":
+					pairing_time_dict[advisor]=find_available_times(advisor_csv[i][advisor_times_col])
+				elif option_times = "preference"
+					pairing_time_dict[advisor]=advisor_csv[i][advisor_times_col]
 			else:
-				pairing_time_dict[advisor]=full_permutation_time()
+				pairing_time_dict[advisor]=copy.deepcopy(full_permutation_time())
 				output_file.write("Advisor "+advisor+" did not write any time preferences and they will be assigned all possible times when computing the model.\n")
 				error = 1
 				
@@ -625,9 +649,9 @@ def main(student_file_points,advisor_file,course_conflict_list,full_data_file,am
 				if not isinstance(advisor_times,str):
 					for j in range(0,len(advisor_times)):
 						if advisor_times[j]!="":
-							temp_list.append(convert_time(advisor_times[j]))
+							temp_list.append(advisor_times[j])
 				else: #it's a string
-					temp_list.append(convert_time(advisor_times))
+					temp_list.append(advisor_times)
 			#If they don't have preferences, then write all the times for them
 			else:
 				#Redefine all_times for clarity
