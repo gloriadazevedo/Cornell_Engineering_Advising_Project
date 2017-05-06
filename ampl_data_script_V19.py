@@ -65,8 +65,8 @@ advisor_dep_pairing_col=1
 advisor_pairing_str_col=2
 advisor_dept_col=3
 advisor_majors_col=4
-advisor_times_col=11
-num_advisor_cols=12
+advisor_times_col=10
+num_advisor_cols=11
 
 #course_conflict_csv
 course_code_col = 0
@@ -445,7 +445,7 @@ def main(student_file_points,advisor_file,course_conflict_list,full_data_file,am
 			#Read the next line
 			reader=f.readline()
 			
-	#Convert the times in the advisor_times_col to be the correct ones
+	#Convert the times in the advisor_times_col to be the correct format
 	for i in range(0,len(advisor_csv)):
 		if len(advisor_csv[i])>=num_advisor_cols:
 			if not isinstance(advisor_csv[i][advisor_times_col],str):
@@ -637,30 +637,30 @@ def main(student_file_points,advisor_file,course_conflict_list,full_data_file,am
 							if conflict_codes not in schedule_dict[j]:
 								schedule_dict[j].append(conflict_codes)
 	
-		#Need to make a dictionary of times for advisor preferences 
-		#then use it to compare and see if there are conflicts
-		advisor_schedule_dict=dict()
-		for i in range(0,len(advisor_csv)):
-			temp_list=[]
-			#Need to check if there are any advisor times
-			if len(advisor_csv[i])>=num_advisor_cols:
-				advisor_times=pairing_time_dict[advisor_csv[i][advisor_id_col]]
-				#check if it's a list
-				if not isinstance(advisor_times,str):
-					for j in range(0,len(advisor_times)):
-						if advisor_times[j]!="":
-							temp_list.append(advisor_times[j])
-				else: #it's a string
-					temp_list.append(advisor_times)
-			#If they don't have preferences, then write all the times for them
-			else:
-				#Redefine all_times for clarity
-				temp_list=full_permutation_time()
-			advisor_schedule_dict[advisor_csv[i][advisor_id_col].lower()]=copy.deepcopy(temp_list)
+		# #Need to make a dictionary of times for advisor preferences 
+		# #then use it to compare and see if there are conflicts
+		# advisor_schedule_dict=dict()
+		# for i in range(0,len(advisor_csv)):
+			# temp_list=[]
+			# #Need to check if there are any advisor times
+			# if len(advisor_csv[i])>=num_advisor_cols:
+				# advisor_times=pairing_time_dict[advisor_csv[i][advisor_id_col]]
+				# #check if it's a list
+				# if not isinstance(advisor_times,str):
+					# for j in range(0,len(advisor_times)):
+						# if advisor_times[j]!="":
+							# temp_list.append(advisor_times[j])
+				# else: #it's a string
+					# temp_list.append(advisor_times)
+			# #If they don't have preferences, then write all the times for them
+			# else:
+				# #Redefine all_times for clarity
+				# temp_list=full_permutation_time()
+			# advisor_schedule_dict[advisor_csv[i][advisor_id_col].lower()]=copy.deepcopy(temp_list)
 			
-		#Delete the blank key
-		if '' in advisor_schedule_dict.keys():
-			del advisor_schedule_dict['']
+		# #Delete the blank key
+		# if '' in advisor_schedule_dict.keys():
+			# del advisor_schedule_dict['']
 		
 		#Make a dictionary for the majors that the advisor takes		
 		advisor_major_dict=dict()
@@ -684,23 +684,29 @@ def main(student_file_points,advisor_file,course_conflict_list,full_data_file,am
 		for i in range(0,len(advisor_csv)):
 			dept = convert_department_to_code(advisor_csv[i][advisor_dept_col])
 			advisor = advisor_csv[i][advisor_id_col].lower()
-			advisor_times = copy.deepcopy(advisor_schedule_dict[advisor])
+			advisor_times = copy.deepcopy(pairing_time_dict[advisor])
 			#for each time, see if the department conflicts with it
 			#create a list to remove later
 			remove_list = []
-			for j in range(0,len(advisor_times)):
-				if dept in schedule_dict[advisor_times[j]]:
-					remove_list.append(advisor_times[j])
+			if not isinstance(advisor_times,str):
+				for j in range(0,len(advisor_times)):
+					if dept in schedule_dict[advisor_times[j]]:
+						remove_list.append(advisor_times[j])
+			else:
+				remove_list = advisor_times
 			#remove the values in the remove_list
-			for j in range(0,len(remove_list)):
-				advisor_times.remove(remove_list[j])
+			if not isinstance(remove_list,str):
+				for j in range(0,len(remove_list)):
+					advisor_times.remove(remove_list[j])
+			else:
+				advisor_times=[]
 					
 			#check if there are no remaining times; if there are none, 
 			#then give the advisor all the times
 			if len(advisor_times)==0:
 				output_file.write("Error: Times for "+advisor+" conflict with their department courses.  All times will be added for "+advisor+" when computing the model.\n")
 				#give the advisor all the times
-				advisor_schedule_dict[advisor]=full_permutation_time()
+				pairing_time_dict[advisor]=full_permutation_time()
 				error = 0
 				
 		
@@ -710,7 +716,7 @@ def main(student_file_points,advisor_file,course_conflict_list,full_data_file,am
 		department_advisor_dict=dict()
 		for i in range(0,len(advisor_csv)):
 			if advisor_csv[i][advisor_dept_col] not in department_advisor_dict.keys():
-				#add the key if it's not in there
+				#add the key (department) if it's not in there
 				department_advisor_dict[convert_department_to_code(advisor_csv[i][advisor_dept_col])]=[]
 			if advisor_csv[i][advisor_pairing_str_col]=="":
 				department_advisor_dict[convert_department_to_code(advisor_csv[i][advisor_dept_col])].append(advisor_csv[i][advisor_id_col].lower())
@@ -748,7 +754,7 @@ def main(student_file_points,advisor_file,course_conflict_list,full_data_file,am
 									
 				#check if the given advisor has intersecting times with this set 
 				#of times from other advisors
-				if len(set(other_advisor_times).intersection(advisor_schedule_dict(advisor_id)))==0:
+				if len(set(other_advisor_times).intersection(pairing_time_dict[advisor_id]))==0:
 					output_file.write("Error: Times given by "+ advisor_id + "do not intersect with times of others in their department.  The preference will be removed in computing the model.\n")
 					advisor_csv[i][advisor_dep_pairing_col]=0
 					error = 1
