@@ -23,6 +23,10 @@
 #Tier 2: All other URM
 
 printing="on"
+#option_times should be "preference" or "conflict"
+#if it's "conflict" then we want to return the complement set of all possible times
+#if it's "preference" then we want to match the advisors with the times that they indicated
+option_times = "preference"
 
 import sys
 import argparse
@@ -54,8 +58,8 @@ advisor_dep_pairing_col=1
 advisor_pairing_str_col=2
 advisor_dept_col=3
 advisor_majors_col=4
-advisor_times_col=5
-num_advisor_cols=6
+advisor_times_col=11
+num_advisor_cols=12
 
 #course_conflict_csv
 course_code_col = 0
@@ -488,7 +492,10 @@ def main(student_file_points,advisor_file,course_conflict_list,full_data_file,am
 			#Add all the advisors and their times
 			#Check if they even put times; if they didn't then give them all the times
 			if len(advisor_csv[i])>=num_advisor_cols:
-				pairing_time_dict[advisor]=advisor_csv[i][advisor_times_col]
+				if option_times = "conflict":
+					pairing_time_dict[advisor]=find_available_times(advisor_csv[i][advisor_times_col])
+				elif option_times = "preference"
+					pairing_time_dict[advisor]=advisor_csv[i][advisor_times_col]
 			else:
 				pairing_time_dict[advisor]=full_permutation_time()
 				output_file.write("Advisor "+advisor+" did not write any time preferences and they will be assigned all possible times when computing the model.\n")
@@ -577,7 +584,7 @@ def main(student_file_points,advisor_file,course_conflict_list,full_data_file,am
 			temp_list=[]
 			#Need to check if there are any advisor times
 			if len(advisor_csv[i])>=num_advisor_cols:
-				advisor_times=advisor_csv[i][advisor_times_col]
+				advisor_times=pairing_time_dict[advisor_csv[i][advisor_id_col]]
 				#check if it's a list
 				if not isinstance(advisor_times,str):
 					for j in range(0,len(advisor_times)):
@@ -639,9 +646,10 @@ def main(student_file_points,advisor_file,course_conflict_list,full_data_file,am
 		#Need to make a list of all the advisors in each department
 		#Initialize dictionary
 		#Key is department, value is a list of advisor's lowercase NetIDs
+		#Also don't add those advisors that have a pairing
 		department_advisor_dict=dict()
 		for i in range(0,len(advisor_csv)):
-			if advisor_csv[i][advisor_dept_col] not in department_advisor_dict.keys():
+			if advisor_csv[i][advisor_dept_col] not in department_advisor_dict.keys() and advisor_csv[i][advisor_pairing_str_col]=="":
 				#add the key if it's not in there
 				department_advisor_dict[convert_department_to_code(advisor_csv[i][advisor_dept_col])]=[]
 			department_advisor_dict[convert_department_to_code(advisor_csv[i][advisor_dept_col])].append(advisor_csv[i][advisor_id_col].lower())

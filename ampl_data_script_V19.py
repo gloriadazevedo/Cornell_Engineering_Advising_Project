@@ -644,7 +644,7 @@ def main(student_file_points,advisor_file,course_conflict_list,full_data_file,am
 			temp_list=[]
 			#Need to check if there are any advisor times
 			if len(advisor_csv[i])>=num_advisor_cols:
-				advisor_times=advisor_csv[i][advisor_times_col]
+				advisor_times=pairing_time_dict[advisor_csv[i][advisor_id_col]]
 				#check if it's a list
 				if not isinstance(advisor_times,str):
 					for j in range(0,len(advisor_times)):
@@ -709,7 +709,7 @@ def main(student_file_points,advisor_file,course_conflict_list,full_data_file,am
 		#Key is department, value is a list of advisor's lowercase NetIDs
 		department_advisor_dict=dict()
 		for i in range(0,len(advisor_csv)):
-			if advisor_csv[i][advisor_dept_col] not in department_advisor_dict.keys():
+			if advisor_csv[i][advisor_dept_col] not in department_advisor_dict.keys() and advisor_csv[i][advisor_pairing_str_col]=="":
 				#add the key if it's not in there
 				department_advisor_dict[convert_department_to_code(advisor_csv[i][advisor_dept_col])]=[]
 			department_advisor_dict[convert_department_to_code(advisor_csv[i][advisor_dept_col])].append(advisor_csv[i][advisor_id_col].lower())
