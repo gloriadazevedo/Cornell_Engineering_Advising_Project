@@ -552,9 +552,9 @@ def main(student_file_points,advisor_file,course_conflict_list,full_data_file,am
 			#Add all the advisors and their times
 			#Check if they even put times; if they didn't then give them all the times
 			if len(advisor_csv[i])>=num_advisor_cols:
-				if option_times = "conflict":
+				if option_times == "conflict":
 					pairing_time_dict[advisor]=find_available_times(advisor_csv[i][advisor_times_col])
-				elif option_times = "preference"
+				elif option_times == "preference":
 					pairing_time_dict[advisor]=advisor_csv[i][advisor_times_col]
 			else:
 				pairing_time_dict[advisor]=copy.deepcopy(full_permutation_time())
@@ -709,10 +709,11 @@ def main(student_file_points,advisor_file,course_conflict_list,full_data_file,am
 		#Key is department, value is a list of advisor's lowercase NetIDs
 		department_advisor_dict=dict()
 		for i in range(0,len(advisor_csv)):
-			if advisor_csv[i][advisor_dept_col] not in department_advisor_dict.keys() and advisor_csv[i][advisor_pairing_str_col]=="":
+			if advisor_csv[i][advisor_dept_col] not in department_advisor_dict.keys():
 				#add the key if it's not in there
 				department_advisor_dict[convert_department_to_code(advisor_csv[i][advisor_dept_col])]=[]
-			department_advisor_dict[convert_department_to_code(advisor_csv[i][advisor_dept_col])].append(advisor_csv[i][advisor_id_col].lower())
+			if advisor_csv[i][advisor_pairing_str_col]=="":
+				department_advisor_dict[convert_department_to_code(advisor_csv[i][advisor_dept_col])].append(advisor_csv[i][advisor_id_col].lower())
 			
 		#Check to see if the times for this advisor overlaps with some times from other
 		#advisors in their department if the advisor pairing is "Any in Department"
