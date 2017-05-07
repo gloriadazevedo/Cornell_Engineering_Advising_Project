@@ -1,4 +1,4 @@
-Attribute VB_Name = "MainUpdateCode"
+Attribute VB_Name = "Module1"
 Public Const error_print_data = "ErrorPrint.txt"
 Public Const solution_data = "SolutionOutput.txt"
 Public Const student_output_data = "StudentOutput.txt"
@@ -55,6 +55,8 @@ Sub Run_Python()
     'Call the start.cmd file which changes the file path and called the Python file
     workbook_path = ActiveWorkbook.Path
     RetVal = Shell(workbook_path & "\start.cmd")
+    
+    Call Import_All_Data
 
 End Sub
 
@@ -179,64 +181,9 @@ Sub create_csv()
     'Make the Advisor_Preference_Data.csv file
     advisor_filename = "Advisor_Preference_Data.csv"
     'Copy the data into the Advisor_Preference_Data sheet
-    Range(Range("Advisor_Headings"), Range("Advisor_Headings").End(xlDown)).Copy
+    Range("Advisor_Data").Copy
     Sheets("Advisor_Preference_Data").Visible = True
     Sheets("Advisor_Preference_Data").Range("A1").PasteSpecial (xlPasteValues)
-    
-    'Need to append all the times
-    advisor_header = Range(Sheets("Advisor_Preference_Data").Range("$A$1"), _
-                Sheets("Advisor_Preference_Data").Range("$A$1").End(xlToRight)).Address
-    mon_col = WorksheetFunction.Match("Monday Times", Sheets("Advisor_Preference_Data").Range(advisor_header), 0) - 1
-    tues_col = WorksheetFunction.Match("Tuesday Times", Sheets("Advisor_Preference_Data").Range(advisor_header), 0) - 1
-    wed_col = WorksheetFunction.Match("Wednesday Times", Sheets("Advisor_Preference_Data").Range(advisor_header), 0) - 1
-    thur_col = WorksheetFunction.Match("Thursday Times", Sheets("Advisor_Preference_Data").Range(advisor_header), 0) - 1
-    fri_col = WorksheetFunction.Match("Friday Times", Sheets("Advisor_Preference_Data").Range(advisor_header), 0) - 1
-    
-    num_rows = Range(Sheets("Advisor_Preference_Data").Range("$A$1").Offset(1, 0), _
-                     Sheets("Advisor_Preference_Data").Range("$A$1").End(xlDown)).Rows.Count
-    Sheets("Advisor_Preference_Data").Range("$A$1").End(xlToRight).Offset(0, 1).Value = "Advisor_Times"
-    
-    'write the formula for the first time
-    For i = 1 To num_rows
-        
-        first_comma = ""
-        second_comma = ""
-        third_comma = ""
-        fourth_comma = ""
-        
-        'get the times for each of the days of the week
-        mon_value = Sheets("Advisor_Preference_Data").Range("$A$1").Offset(i, mon_col).Value
-    
-        tues_value = Sheets("Advisor_Preference_Data").Range("$A$1").Offset(i, tues_col).Value
-    
-        wed_value = Sheets("Advisor_Preference_Data").Range("$A$1").Offset(i, wed_col).Value
-    
-        thur_value = Sheets("Advisor_Preference_Data").Range("$A$1").Offset(i, thur_col).Value
-        
-        fri_value = Sheets("Advisor_Preference_Data").Range("$A$1").Offset(i, fri_col).Value
-        
-        'Need to check if we need the commas
-        If mon_value <> "" And (tues_value <> "" Or wed_value <> "" Or thur_value <> "" Or fri_value <> "") Then
-            first_comma = ","
-        End If
-    
-        If tues_value <> "" And (wed_value <> "" Or thur_value <> "" Or fri_value <> "") Then
-            second_comma = ","
-        End If
-    
-        If wed_value <> "" And (thur_value <> "" Or fri_value <> "") Then
-            third_comma = ","
-        End If
-        
-        If thur_value <> "" And fri_value <> "" Then
-            fourth_comma = ","
-        End If
-    
-    Sheets("Advisor_Preference_Data").Range("$A$1").End(xlToRight).Offset(i, 0).Value = _
-        mon_value & first_comma & tues_value & second_comma & wed_value & _
-            third_comma & thur_value & fourth_comma & fri_value
-    Next
-    
     
     'Need to turn off alerts to just overwrite the file
     Application.DisplayAlerts = False
@@ -292,9 +239,6 @@ Sub Import_All_Data()
     'Need a separate subroutine that the user has to press
     'when the AMPL file is completed
 
-    'Turn off screen updating
-    Application.ScreenUpdating = False
-
     'Import the student match
     Call Import_Student_Matching
     
@@ -319,12 +263,7 @@ Sub Import_All_Data()
         general_stats_sheet & "!PivotTable2")
     Sheets(section_stats_sheet).PivotTables("PivotTable5").ChangePivotCache ( _
         general_stats_sheet & "!PivotTable2")
-        
-    'Go back to the dashboard
-    Call GoToDashboard
 
-    'Turn on screen updating
-    Application.ScreenUpdating = True
 
 End Sub
 
@@ -335,15 +274,12 @@ Sub Import_Student_Matching()
     'sheet for easier use
     'also used for adding the extra students
     
-    'Turn off screen updating
-    Application.ScreenUpdating = False
-    
     'File should be in the same directory as the workbook from other subroutines
     workbook_path = ActiveWorkbook.Path
     
     'Delete if there is anything
     Application.DisplayAlerts = False
-    Sheets(student_matching_sheet).Range("Student_Matching_Start").CurrentRegion.Clear
+    Sheets(student_matching_sheet).Range("$A$1").CurrentRegion.Clear
     Application.DisplayAlerts = True
     
     'Activate sheet--Excel rules, apparently
@@ -352,7 +288,7 @@ Sub Import_Student_Matching()
     'Import
     With Sheets(student_matching_sheet).QueryTables.Add(Connection:= _
         "TEXT;" & workbook_path & "\" & student_output_data _
-        , Destination:=Range("Student_Matching_Start"))
+        , Destination:=Range("$A$1"))
         .Name = "StudentOutput"
         .FieldNames = True
         .RowNumbers = False
@@ -381,18 +317,12 @@ Sub Import_Student_Matching()
     
     'Delete the connection
     ActiveWorkbook.Connections("StudentOutput").Delete
-    
-    'Turn on screen updating
-    Application.ScreenUpdating = True
 
 End Sub
 
 Sub Import_Error_Print()
     'Subroutine to import the presolve errors from the advisor matching
     'or advisor times
-    
-    'Turn off screen updating
-    Application.ScreenUpdating = False
     
     'File should be in the same directory as the workbook from other subroutines
     workbook_path = ActiveWorkbook.Path
@@ -435,9 +365,6 @@ Sub Import_Error_Print()
     
     'Delete the connection
     ActiveWorkbook.Connections("ErrorPrint").Delete
-    
-    'Turn on screen updating
-    Application.ScreenUpdating = True
 
 End Sub
 
@@ -445,15 +372,12 @@ Sub Import_Advisor_Schedule()
     'Subroutine to import the Advisor schedule
     'data into the corresponding sheet for easier use
 
-    'Turn off screen updating
-    Application.ScreenUpdating = False
-
     'File should be in the same directory as the workbook from other subroutines
     workbook_path = ActiveWorkbook.Path
     
     'Delete if there is anything
     Application.DisplayAlerts = False
-    Sheets(advisor_schedule_sheet).Range("Advisor_Schedule_Start").CurrentRegion.Clear
+    Sheets(advisor_schedule_sheet).Range("$A$1").CurrentRegion.Clear
     Application.DisplayAlerts = True
 
     'Activate sheet, just in case
@@ -462,7 +386,7 @@ Sub Import_Advisor_Schedule()
     'Import data
     With Sheets(advisor_schedule_sheet).QueryTables.Add(Connection:= _
         "TEXT;" & workbook_path & "\" & advisor_schedule_data _
-        , Destination:=Range("Advisor_Schedule_Start"))
+        , Destination:=Range("$A$1"))
         .Name = "AdvisorScheduleOutput"
         .FieldNames = True
         .RowNumbers = False
@@ -492,17 +416,11 @@ Sub Import_Advisor_Schedule()
     'Delete the connection
     ActiveWorkbook.Connections("AdvisorScheduleOutput").Delete
 
-    'Turn on screen updating
-    Application.ScreenUpdating = True
-
 End Sub
 
 Sub Import_Solution_Output()
     'Subroutine to import the full Solution Output
     'similar to how we do it for the template
-    
-    'Turn off screen updating
-    Application.ScreenUpdating = False
     
     'Unhide sheet
     Sheets(solution_output_sheet).Visible = True
@@ -554,9 +472,6 @@ Sub Import_Solution_Output()
     
     'Hide sheet
     Sheets(solution_output_sheet).Visible = False
-    
-    'Turn on screen updating
-    Application.ScreenUpdating = True
 
 End Sub
 
@@ -564,9 +479,6 @@ End Sub
 Sub Refresh_Pivot()
     'Subroutine to refresh all the pivots that
     'are based off the Solution output sheet
-    
-    'Turn off screen updating
-    Application.ScreenUpdating = False
     
     Sheets(general_stats_sheet).PivotTables("PivotTable1").ChangePivotCache ActiveWorkbook. _
         PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
@@ -582,15 +494,10 @@ Sub Refresh_Pivot()
     
     ActiveWorkbook.RefreshAll
 
-    'Turn on screen updating
-    Application.ScreenUpdating = True
 End Sub
 
 Sub Add_Student_to_Section()
     'Subroutine to add the extra students to sections that only have 14 students
-    
-    'Turn off screen updating
-    Application.ScreenUpdating = False
     
     'Declare dictionary
     Set advisor_count_dictionary = New Scripting.Dictionary
@@ -682,25 +589,55 @@ Sub Add_Student_to_Section()
     'Hide the SolutionOutput sheet
     Sheets(solution_output_sheet).Visible = False
     
-    'Turn on screen updating
-    Application.ScreenUpdating = True
-    
-    'Go to the Student Matching sheet if not already there
-    Call GoToStudentMatching
-    
 End Sub
 
 Sub check_advisor_data()
     'Subroutine that checks if the advisor data is all feasible
+    'Call a separate python section
+    'First output the advisor_data to the csv
+    workbook_name = ActiveWorkbook.FullName
+    workbook_path = ActiveWorkbook.Path
+    advisor_filename = "Advisor_Preference_Data.csv"
+    'Copy the data into the Advisor_Preference_Data sheet
+    Range("Advisor_Data").Copy
+    Sheets("Advisor_Preference_Data").Visible = True
+    Sheets("Advisor_Preference_Data").Range("A1").PasteSpecial (xlPasteValues)
     
-    Call create_csv
+    'Need to turn off alerts to just overwrite the file
+    Application.DisplayAlerts = False
+    Sheets("Advisor_Preference_Data").SaveAs Filename:=workbook_path + ("\") + advisor_filename, FileFormat:=xlCSV
+    Application.DisplayAlerts = True
+    Sheets("Advisor_Preference_Data").Range("A1").CurrentRegion.ClearContents
+    
+    'Cleanup
+    Sheets("Advisor_Preference_Data").Visible = False
+    Application.DisplayAlerts = False
+    ActiveWorkbook.SaveAs workbook_name, FileFormat:=xlOpenXMLWorkbookMacroEnabled
+    Application.DisplayAlerts = True
+    
+    'Make the Course_Conflict_Data.csv file
+    course_conflict_filename = "Course_Conflict_Data_Sheet.csv"
+    'Copy the data into the Course_Conflict_Data sheet
+    Range("Course_Conflict_Data").Copy
+    Sheets("Course_Conflict_Data_Sheet").Visible = True
+    Sheets("Course_Conflict_Data_Sheet").Range("A1").PasteSpecial (xlPasteValues)
+    
+    'Need to turn off alerts to just overwrite the file
+    Application.DisplayAlerts = False
+    Sheets("Course_Conflict_Data_Sheet").SaveAs workbook_path + "\" + course_conflict_filename, FileFormat:=xlCSV
+    Sheets("Course_Conflict_Data_Sheet").Range("A1").CurrentRegion.ClearContents
+    Sheets("Course_Conflict_Data_Sheet").Visible = False
+    Application.DisplayAlerts = True
+    
+    'Cleanup
+    Application.DisplayAlerts = False
+    ActiveWorkbook.SaveAs Filename:=workbook_name, FileFormat:=52
+    Application.DisplayAlerts = True
+    
     
     'Call the python code
     RetVal = Shell("python " & workbook_path & "Check_advisor_python.py")
     
     'Import the erros
     Call Import_Error_Print
-    
-    'Turn on screen updating
-    Application.ScreenUpdating = True
 End Sub
