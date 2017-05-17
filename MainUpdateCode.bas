@@ -574,13 +574,20 @@ Sub Refresh_Pivot()
         , Version:=6)
     Sheets(general_stats_sheet).PivotTables("PivotTable2").ChangePivotCache ("PivotTable1")
     Sheets(section_stats_sheet).PivotTables("PivotTable3").ChangePivotCache ( _
-        general_stats_sheet & "!PivotTable2")
+        general_stats_sheet & "!PivotTable1")
     Sheets(section_stats_sheet).PivotTables("PivotTable4").ChangePivotCache ( _
-        general_stats_sheet & "!PivotTable2")
+        general_stats_sheet & "!PivotTable1")
     Sheets(section_stats_sheet).PivotTables("PivotTable5").ChangePivotCache ( _
-        general_stats_sheet & "!PivotTable2")
+        general_stats_sheet & "!PivotTable1")
     
-    ActiveWorkbook.RefreshAll
+    'ActiveWorkbook.RefreshAll
+    For Each PT In Sheets(general_stats_sheet).PivotTables
+        PT.RefreshTable
+    Next PT
+
+    For Each PT In Sheets(section_stats_sheet).PivotTables
+        PT.RefreshTable
+    Next PT
 
     'Turn on screen updating
     Application.ScreenUpdating = True
@@ -601,12 +608,13 @@ Sub Add_Student_to_Section()
     num_new_students = Range("Add_Student_Header").CurrentRegion.Count - 1
     
     'List of advisors is on the advisor_schedule_sheet
-    num_advisors = Range(Sheets(advisor_schedule_sheet).Range("$A$1"), Sheets(advisor_schedule_sheet).Range("$A$1").End(xlDown)).Count - 1
+    num_advisors = Range(Sheets(advisor_schedule_sheet).Range("$A$5"), _
+        Sheets(advisor_schedule_sheet).Range("Advisor_Schedule_Start").End(xlDown)).Rows.Count - 1
     
     'Add all the keys to dictionary
     For i = 1 To num_advisors
         'Check if the key exists, if not then add it with value of 0
-        advisor_key = Sheets(advisor_schedule_sheet).Range("$A$1").Offset(i, 0).Value
+        advisor_key = Sheets(advisor_schedule_sheet).Range("Advisor_Schedule_Start").Offset(i, 0).Value
         
         If Not advisor_count_dictionary.Exists(advisor_key) Then
             advisor_count_dictionary.Add advisor_key, 0
@@ -615,12 +623,12 @@ Sub Add_Student_to_Section()
     Next
     
     'Find the advisors who have 14 students--just iterate through the student matching
-    num_students = Sheets(student_matching_sheet).Range("$A$1").CurrentRegion.Rows.Count - 1
+    num_students = Sheets(student_matching_sheet).Range("Student_Matching_Start").CurrentRegion.Rows.Count - 1
     
     'Iterate through students and count them per advisor; the advisor is in column B
     For i = 1 To num_students
         'Get the advisor name
-        advisor_name = Sheets(student_matching_sheet).Range("$B$1").Offset(i, 0).Value
+        advisor_name = Sheets(student_matching_sheet).Range("Student_Matching_Start").Offset(i, 1).Value
         
         'Increment the key in the dictionary
         advisor_count_dictionary(advisor_name) = advisor_count_dictionary(advisor_name) + 1
@@ -630,8 +638,8 @@ Sub Add_Student_to_Section()
     'Go through each of the students to see if there are duplicates
     For i = 1 To num_new_students
         count_occurrence = WorksheetFunction.CountIf(Range( _
-            Sheets(student_matching_sheet).Range("$A$1"), _
-            Sheets(student_matching_sheet).Range("$A$1").End(xlDown)), _
+            Sheets(student_matching_sheet).Range("Student_Matching_Start"), _
+            Sheets(student_matching_sheet).Range("Student_Matching_Start").End(xlDown)), _
             "=" & Range("Add_Student_Header").Offset(i, 0))
         If count_occrrence <> 0 Then
             MsgBox ("Error: Student ID " & Range("Add_Student_Header").Offset(i, 0).Value & "already in matching. " _
@@ -645,6 +653,7 @@ Sub Add_Student_to_Section()
             min_value = 100 'Really high upper bound for number of students per advisor
             min_advisor = ""
             For Each k In advisor_count_dictionary.Keys()
+                '14 is the lower bound from the model as per advising office parameters
                 If advisor_count_dictionary(k) = 14 Then
                     
                     'Assign
@@ -660,9 +669,11 @@ Sub Add_Student_to_Section()
             
             'Went through all advisors and the min is not 14 so just add the student
             'to the min advisor that we already found
-            Sheets(student_matching_sheet).Range("$A$1").End(xlDown).Offset(1, 0).Value = _
+            'Add the student value
+            Sheets(student_matching_sheet).Range("Student_Matching_Start").End(xlDown).Offset(1, 0).Value = _
                         Range("Add_Student_Header").Offset(i, 0).Value
-            Sheets(student_matching_sheet).Range("$B$1").End(xlDown).Offset(1, 0).Value = min_advisor
+            'Add the advisor
+            Sheets(student_matching_sheet).Range("Student_Matching_Start").End(xlDown).Offset(0, 1).Value = min_advisor
             
             'Add the student to the advisor value
             advisor_count_dictionary(min_advisor) = advisor_count_dictionary(min_advisor) + 1
