@@ -640,9 +640,10 @@ Sub Add_Student_to_Section()
         count_occurrence = WorksheetFunction.CountIf(Range( _
             Sheets(student_matching_sheet).Range("Student_Matching_Start"), _
             Sheets(student_matching_sheet).Range("Student_Matching_Start").End(xlDown)), _
-            "=" & Range("Add_Student_Header").Offset(i, 0))
-        If count_occrrence <> 0 Then
-            MsgBox ("Error: Student ID " & Range("Add_Student_Header").Offset(i, 0).Value & "already in matching. " _
+            "=" & Range("Add_Student_Header").Offset(i, 0).Value)
+            
+        If count_occurrence <> 0 Then
+            MsgBox ("Error: Student ID " & Range("Add_Student_Header").Offset(i, 0).Value & " already in matching. " _
                 & "Please remove from the list of students to add and try again.")
             'End early
             Exit Sub
@@ -708,6 +709,8 @@ Sub check_advisor_data()
     
     'Call the python code
     RetVal = Shell("python " & workbook_path & "Check_advisor_python.py")
+    
+    Application.Wait (Now + TimeValue("0:00:30"))
     
     'Import the erros
     Call Import_Error_Print
