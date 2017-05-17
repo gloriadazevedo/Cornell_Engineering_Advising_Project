@@ -322,9 +322,9 @@ def msg_ask_continue(error):
 			return False
 	#These will throw infeasible issues in AMPL so alert the user
 	#and don't run the algorithm
-	elif error==2:
-		tk.messagebox.showerror("Infeasible", "Pre-check has found some errors in input data that will yield no solution from the model.  See ErrorPrint.txt for details.  The run will now terminate.")
-		return False
+	# elif error==2:
+		# tk.messagebox.showerror("Infeasible", "Pre-check has found some errors in input data that will yield no solution from the model.  See ErrorPrint.txt for details.  The run will now terminate.")
+		# return False
 	return
 	
 #Function that takes into a list of times and returns the complement of 
