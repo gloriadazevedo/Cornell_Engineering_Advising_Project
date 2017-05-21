@@ -707,8 +707,10 @@ Sub check_advisor_data()
     
     Call create_csv
     
+    workbook_path = ActiveWorkbook.Path
+    
     'Call the python code
-    RetVal = Shell("python " & workbook_path & "Check_advisor_python.py")
+    RetVal = Shell("python " & workbook_path & "\Check_advisor_python.py")
     
     Application.Wait (Now + TimeValue("0:00:30"))
     
