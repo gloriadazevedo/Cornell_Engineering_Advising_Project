@@ -2,31 +2,12 @@
 
 #All majors are: AE,BE,BME,CHEME,CE,CS,ECE,EP,EnvirE,ISST,OR,MSE,ME,Pre-health,SES,Undecided
 
-#Script that processes student, advisor, and course data file into an AMPL .dat file
+#Script that processes advisor and course data file and does basic model checks
 
-#Now student data has points instead of just 1st/2nd/3rd
-#Each major has its own column that can't be hardcoded--must be scraped from the CSV
-
-#The files are now hardcoded since this will be called from VBA and we know exactly 
-#what those files are called
-
-#Use PointAllocation.run which calls PointAllocation.mod and the respective .dat file 
-
-#Input uses Kim's version of the course input instead of the Google Form
-
-#Adds similar majors to all advisors based on their department major
-#In this iteration, we use "directional" similar majors
-#I.e. CS advisors can take OR, ISST, CS, and ECE
-#However, ECE advisors can take CS but not OR, or ISST
-#Includes breaking minorities into two different tiers of minority
-#Tier 1: Hispanic only
-#Tier 2: All other URM
-
-printing="on"
 #option_times should be "preference" or "conflict"
 #if it's "conflict" then we want to return the complement set of all possible times
 #if it's "preference" then we want to match the advisors with the times that they indicated
-option_times = "preference"
+option_times = "conflict"
 
 import sys
 import argparse
